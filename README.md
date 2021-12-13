@@ -1,6 +1,6 @@
 # Docker-based Drupal stack
 
-[![Build Status](https://travis-ci.org/wodby/docker4drupal.svg?branch=master)](https://travis-ci.org/wodby/docker4drupal)
+[![Build Status](https://github.com/wodby/docker4drupal/workflows/Run%20tests/badge.svg)](https://github.com/wodby/docker4drupal/actions)
 
 ## AADL Dev Install Steps
 There are two web applications that will be installed to provide a local AADL development environment:
@@ -8,8 +8,9 @@ There are two web applications that will be installed to provide a local AADL de
 1. The AADL API Laravel web service.
 ### Installing the Drupal Web site
 1. Download a recent database dump file from univac.aadl.org. Open a terminal window, change directory to the *docker4aadl* directory and enter the following scp command to copy the latest database backup from univac:   
-	`scp it@univac.aadl.org:/mnt/backups/latest/aadlexport_*.sql.gz  mariadb-init/`
-1. Copy domain aliases from etc_hosts file to host machine's /etc/hosts
+	`scp it@univac.aadl.org:/mnt/backups/latest/daily_migration.sql.gz  mariadb-init/`	
+1. Change directory to the *aadlorg* folder and install Drupal and the aadl custom modules by entering `composer install`
+1. Copy domain aliases from the 'etc_hosts' file in the docker4aadl directory to your local host machine's /etc/hosts file.
 1. Get Access Token from github for private AADL repositories
 1. Run `docker-compose up` to create docker containers and to install the database backup.
 1. Open terminal window in the aadldev_php container. Use the docker command:  
@@ -24,13 +25,12 @@ There are two web applications that will be installed to provide a local AADL de
         * password: `drupal`
         * Advanced info host: `mariadb`  
           
-    **Install the aadl theme from github**  
-  	1. Use the following git clone command to get the latest code:  
-		`git clone https://github.com/aadl/aadl.org-frontend.git`
-  	1. Copy on top of existing themes directory
-  	1. Follow the installation steps in the aadl.org-frontend readme.md file
-  	2. In the browser, navigate to the admin/appearance section and select the aadl theme as the Default
-  	3. Rebuilt the drupal cache. Run `drush cr` from a terminal window connected to the aadldev_php container - from the root level for the web site `aadlorg/web/`   
+1. Prepare the aadl theme
+    1. Change directory to web/themes/custom/aadl/
+  	1. Follow the installation steps in the aadl readme.md file
+  	1. Check that web/themes/contrib/ has the 'neato' and the 'neato 2' theme installed.  If 'neato 2' is missing, scp a copy from pinkeye.
+  	1. In the browser, navigate to the admin/appearance section and select the aadl theme as the Default
+  	1. Rebuilt the drupal cache. Run `drush cr` from a terminal window connected to the aadldev_php container - from the root level for the web site `aadlorg/web/`   
 1. Change path to '/../vendor/autoload.php' in aadlorg/web/autoload.php
 ### Installing the API
 Open terminal window in the aadldev_php container  
@@ -51,43 +51,42 @@ Docker4Drupal is a set of docker images optimized for Drupal. Use `docker-compos
 
 The Drupal stack consist of the following containers:
 
-| Container       | Versions               | Service name    | Image                              | Default |
-| --------------  | ---------------------- | --------------- | ---------------------------------- | ------- |
-| [Nginx]         | 1.19, 1.18             | `nginx`         | [wodby/nginx]                      | ✓       |
-| [Apache]        | 2.4                    | `apache`        | [wodby/apache]                     |         |
-| [Drupal]        | 9, 8, 7                | `php`           | [wodby/drupal]                     | ✓       |
-| [PHP]           | 7.4, 7.3, 7.2          | `php`           | [wodby/drupal-php]                 |         |
-| Crond           |                        | `crond`         | [wodby/drupal-php]                 | ✓       |
-| [MariaDB]       | 10.5, 10.4, 10.3, 10.2 | `mariadb`       | [wodby/mariadb]                    | ✓       |
-| [PostgreSQL]    | 12, 11, 10, 9.x        | `postgres`      | [wodby/postgres]                   |         |
-| [Redis]         | 6, 5                   | `redis`         | [wodby/redis]                      |         |
-| [Memcached]     | 1                      | `memcached`     | [wodby/memcached]                  |         |
-| [Varnish]       | 6.0, 4.1               | `varnish`       | [wodby/varnish]                    |         |
-| [Node.js]       | 14, 12, 10             | `node`          | [wodby/node]                       |         |
-| [Drupal node]   | 1.0                    | `drupal-node`   | [wodby/drupal-node]                |         |
-| [Solr]          | 8, 7, 6, 5             | `solr`          | [wodby/solr]                       |         |
-| [Elasticsearch] | 7, 6                   | `elasticsearch` | [wodby/elasticsearch]              |         |
-| [Kibana]        | 7, 6                   | `kibana`        | [wodby/kibana]                     |         |
-| [OpenSMTPD]     | 6.0                    | `opensmtpd`     | [wodby/opensmtpd]                  |         |
-| [Mailhog]       | latest                 | `mailhog`       | [mailhog/mailhog]                  | ✓       |
-| [AthenaPDF]     | 2.10.0                 | `athenapdf`     | [arachnysdocker/athenapdf-service] |         |
-| [Rsyslog]       | latest                 | `rsyslog`       | [wodby/rsyslog]                    |         |
-| [Blackfire]     | latest                 | `blackfire`     | [blackfire/blackfire]              |         |
-| [Webgrind]      | 1                      | `webgrind`      | [wodby/webgrind]                   |         |
-| [Xhprof viewer] | latest                 | `xhprof`        | [wodby/xhprof]                     |         |
-| Adminer         | 4.6                    | `adminer`       | [wodby/adminer]                    |         |
-| phpMyAdmin      | latest                 | `pma`           | [phpmyadmin/phpmyadmin]            |         |
-| Selenium chrome | 3.141                  | `chrome`        | [selenium/standalone-chrome]       |         |
-| Portainer       | latest                 | `portainer`     | [portainer/portainer]              | ✓       |
-| Traefik         | latest                 | `traefik`       | [_/traefik]                        | ✓       |
-
+| Container       | Versions                | Image                              | ARM64 support | Enabled by default |
+| --------------- | ----------------------  | ---------------------------------- | ------------- | ------------------ |
+| [Nginx]         | 1.21, 1.20, 1.19        | [wodby/nginx]                      | ✓             | ✓                  |
+| [Apache]        | 2.4                     | [wodby/apache]                     | ✓             |                    |
+| [Drupal]        | 9, 8, 7                 | [wodby/drupal]                     | ✓             | ✓                  |
+| [PHP]           | 8.0, 7.4, 7.3           | [wodby/drupal-php]                 | ✓             |                    |
+| Crond           |                         | [wodby/drupal-php]                 | ✓             | ✓                  |
+| [MariaDB]       | 10.6, 10.5, 10.4, 10.3  | [wodby/mariadb]                    | ✓             | ✓                  |
+| [PostgreSQL]    | 14, 13, 12, 11, 10, 9.6 | [wodby/postgres]                   | ✓             |                    |
+| [Redis]         | 6, 5                    | [wodby/redis]                      | ✓             |                    |
+| [Memcached]     | 1                       | [wodby/memcached]                  |               |                    |
+| [Varnish]       | 6.0, 4.1                | [wodby/varnish]                    |               |                    |
+| [Node.js]       | 16, 14, 12              | [wodby/node]                       |               |                    |
+| [Drupal node]   | 1.0                     | [wodby/drupal-node]                |               |                    |
+| [Solr]          | 8, 7, 6, 5              | [wodby/solr]                       |               |                    |
+| [Elasticsearch] | 7, 6                    | [wodby/elasticsearch]              |               |                    |
+| [Kibana]        | 7, 6                    | [wodby/kibana]                     |               |                    |
+| [OpenSMTPD]     | 6.0                     | [wodby/opensmtpd]                  |               |                    |
+| [Mailhog]       | latest                  | [mailhog/mailhog]                  |               | ✓                  |
+| [AthenaPDF]     | 2.16.0                  | [arachnysdocker/athenapdf-service] |               |                    |
+| [Rsyslog]       | latest                  | [wodby/rsyslog]                    |               |                    |
+| [Blackfire]     | latest                  | [blackfire/blackfire]              |               |                    |
+| [Webgrind]      | 1                       | [wodby/webgrind]                   |               |                    |
+| [Xhprof viewer] | latest                  | [wodby/xhprof]                     |               |                    |
+| Adminer         | 4.6                     | [wodby/adminer]                    |               |                    |
+| phpMyAdmin      | latest                  | [phpmyadmin/phpmyadmin]            |               |                    |
+| Selenium chrome | 3.141                   | [selenium/standalone-chrome]       |               |                    |
+| Traefik         | latest                  | [_/traefik]                        | ✓             | ✓                  |
+ 
 Supported Drupal versions: 9 / 8 / 7
 
 ## Documentation
 
 Full documentation is available at https://wodby.com/docs/stacks/drupal/local.
 
-## Images' tags
+## Image's tags
 
 Images tags format is `[VERSION]-[STABILITY_TAG]` where:
 
@@ -143,7 +142,6 @@ This project is licensed under the MIT open source license.
 [blackfire/blackfire]: https://hub.docker.com/r/blackfire/blackfire
 [mailhog/mailhog]: https://hub.docker.com/r/mailhog/mailhog
 [phpmyadmin/phpmyadmin]: https://hub.docker.com/r/phpmyadmin/phpmyadmin
-[portainer/portainer]: https://hub.docker.com/r/portainer/portainer
 [selenium/standalone-chrome]: https://hub.docker.com/r/selenium/standalone-chrome
 [wodby/adminer]: https://hub.docker.com/r/wodby/adminer
 [wodby/apache]: https://github.com/wodby/apache
